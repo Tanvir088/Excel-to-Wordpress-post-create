@@ -1,0 +1,45 @@
+import pandas as pd
+import requests
+from requests.auth import HTTPBasicAuth
+
+def post_to_wordpress(site_url, username, app_password, title, content):
+    """
+    Create a post on WordPress site using REST API.
+    """
+    post_url = f"{site_url}/wp-json/wp/v2/posts"
+    post_data = {
+        "title": title,
+        "content": content,
+        "status": "publish"
+    }
+    response = requests.post(post_url, json=post_data, auth=HTTPBasicAuth(username, app_password))
+    if response.status_code == 201:
+        print(f"Post '{title}' created successfully.")
+    else:
+        print(f"Failed to create post '{title}'. Status code: {response.status_code}, Response: {response.text}")
+
+def main():
+    # User inputs
+    excel_file = input("Enter path to Excel file: ").strip()
+    site_url = input("Enter your WordPress site URL (e.g. https://example.com): ").strip().rstrip('/')
+    username = input("Enter your WordPress username: ").strip()
+    app_password = input("Enter your WordPress application password: ").strip()
+
+    # Read Excel file
+    try:
+        df = pd.read_excel(excel_file, usecols="A,B", names=["title", "content"], header=None)
+    except Exception as e:
+        print(f"Error reading Excel file: {e}")
+        return
+
+    # Iterate over rows and post to WordPress
+    for index, row in df.iterrows():
+        title = str(row['title'])
+        content = str(row['content'])
+        if title and content:
+            post_to_wordpress(site_url, username, app_password, title, content)
+        else:
+            print(f"Skipping row {index+1} due to missing title or content.")
+
+if __name__ == "__main__":
+    main()
